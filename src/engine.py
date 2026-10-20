@@ -5,7 +5,7 @@ from common import *
 STOP={'the','a','an','is','are','to','of','and','or','in','for','on','how','do','i','what','with','my','it','this','that','be','can'}
 def tokens(s):return[w for w in re.findall(r'[a-z0-9_]+',s.lower())if w not in STOP]
 
-def run(p):
+def legacy_run(p):
     text=p.get('documents','');query=p.get('query','')
     if not isinstance(text,str)or not text.strip()or len(text)>MAX_CHARS:raise ValueError('Paste documentation under 2 MB.')
     qt=tokens(str(query))
@@ -38,3 +38,11 @@ def run(p):
     if not selected:findings.append(finding('warning','No matching evidence found','Try terms used in the documentation. This tool does not invent an answer when retrieval finds no matches.'))
     else:findings.insert(0,finding('success','Relevant source passages retrieved','These are verbatim source excerpts ranked by lexical similarity, not a generated answer or confidence score.'))
     return result('Evidence search complete',[metric('Documents',len(docs)),metric('Chunks',len(chunks)),metric('Matches',len(selected)),metric('Mode','Local TF-IDF')],['Citation','Similarity','Source excerpt'],rows,findings,[{'label':chunks[i][0][:35],'value':round(score*100,1)}for score,i in selected],[{'name':'retrieved-evidence.txt','content':'\n'.join(report)or 'No matching evidence.'}])
+
+
+def run(p):
+    if not isinstance(p,dict):raise ValueError("Send a JSON object.")
+    if p.get("workspace")=="studio":
+        from lab import run as studio_run
+        return studio_run(p)
+    return legacy_run(p)
